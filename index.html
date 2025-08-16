@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Greek & Latin Roots Quiz</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+    }
+    h2 {
+      margin-bottom: 15px;
+    }
+    .root {
+      font-size: 2em;
+      color: #2563eb;
+      margin: 10px 0;
+    }
+    .answer {
+      margin-top: 15px;
+      font-size: 1.1em;
+    }
+    button {
+      margin: 8px;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+    .show-btn {
+      background: #2563eb;
+      color: white;
+    }
+    .next-btn {
+      background: #e5e7eb;
+    }
+    .reset-btn {
+      background: #ef4444;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Root Quiz</h2>
+    <div id="rootWord" class="root"></div>
+    <div id="hint" style="color: gray;">Tap below to see the meaning</div>
+    <div id="answer" class="answer" style="display:none;"></div>
+    <div>
+      <button class="show-btn" onclick="showAnswer()">Show Answer</button>
+      <button class="next-btn" onclick="nextCard()">Next</button>
+      <button class="reset-btn" onclick="resetQuiz()">Reset</button>
+    </div>
+  </div>
+
+  <script>
+    const roots = [
+      { root: "micro", meaning: "small", examples: ["micron", "microscope"] },
+      { root: "mono", meaning: "one, single", examples: ["monorail", "monosaccharide"] },
+      { root: "multi", meaning: "many", examples: ["multiply", "multitude"] },
+      { root: "anthropo", meaning: "man", examples: ["anthropology", "anthropomorphism"] },
+      { root: "-logy", meaning: "science of, study of", examples: ["biology", "zoology"] },
+      { root: "phono", meaning: "sound", examples: ["phonograph", "microphone"] },
+      { root: "photo", meaning: "light", examples: ["photograph", "photosphere"] },
+      { root: "post", meaning: "after", examples: ["postpone", "posterior"] },
+      { root: "pre", meaning: "before", examples: ["prevent", "prepare"] },
+      { root: "anti", meaning: "against", examples: ["antidote", "antibiotic"] },
+      { root: "pseudo", meaning: "false", examples: ["pseudonym", "pseudopodia"] },
+      { root: "thermo", meaning: "temperature, heat", examples: ["thermal", "thermometer"] },
+      { root: "psycho", meaning: "mind", examples: ["psychology", "psychic"] },
+      { root: "helio", meaning: "sun", examples: ["helium", "heliocentric"] },
+      { root: "macro", meaning: "large", examples: ["macromolecule", "macroscopic"] },
+      { root: "bio", meaning: "life", examples: ["autobiography", "biome"] },
+      { root: "chrono", meaning: "time", examples: ["chronological", "chronograph"] },
+      { root: "circum", meaning: "around", examples: ["circumference", "circumnavigate"] },
+      { root: "auto", meaning: "self", examples: ["autosome", "automobile"] },
+      { root: "aqua", meaning: "water", examples: ["aquatic", "aquarium"] },
+      { root: "poly", meaning: "many", examples: ["polyploidy", "polygon"] },
+      { root: "zyg-", meaning: "pair", examples: ["zygote", "zygospore"] },
+      { root: "neuro", meaning: "nerve", examples: ["neuron", "neurosurgeon"] },
+      { root: "corpus", meaning: "body", examples: ["corpse", "corpuscle"] },
+      { root: "derm", meaning: "skin", examples: ["epidermis", "dermatologist"] },
+      { root: "hemi", meaning: "half", examples: ["hemisphere", "Hemiptera"] },
+      { root: "avi", meaning: "bird", examples: ["aviation", "aviary"] },
+      { root: "chlor", meaning: "green", examples: ["chlorophyll", "chlorine"] },
+      { root: "ophthalmo", meaning: "eye", examples: ["ophthalmologist", "ophthalmic"] },
+      { root: "sub", meaning: "below, under", examples: ["submarine", "subcutaneous"] },
+      { root: "entomo", meaning: "insect", examples: ["entomology", "entomopathogen"] },
+      { root: "contra", meaning: "against", examples: ["contrast", "contradict"] },
+      { root: "cardi", meaning: "heart", examples: ["cardiac", "cardiovascular"] },
+      { root: "magni", meaning: "great, large", examples: ["magnify", "magnificent"] },
+      { root: "hypo", meaning: "below, under", examples: ["hypodermic", "hypoglycemia"] }
+    ];
+
+    let index = 0;
+
+    function showCard() {
+      document.getElementById("rootWord").textContent = roots[index].root;
+      document.getElementById("answer").style.display = "none";
+      document.getElementById("hint").style.display = "block";
+    }
+
+    function showAnswer() {
+      const ansDiv = document.getElementById("answer");
+      ansDiv.innerHTML = `<strong>Meaning:</strong> ${roots[index].meaning}<br>
+        <strong>Examples:</strong> ${roots[index].examples.join(", ")}`;
+      ansDiv.style.display = "block";
+      document.getElementById("hint").style.display = "none";
+    }
+
+    function nextCard() {
+      index = (index + 1) % roots.length;
+      showCard();
+    }
+
+    function resetQuiz() {
+      index = 0;
+      showCard();
+    }
+
+    // init
+    showCard();
+  </script>
+</body>
+</html>
