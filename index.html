@@ -1,193 +1,418 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Greek & Latin Roots Quiz</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f3f4f6;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .container {
-      width: 100%;
-      max-width: 500px;
-    }
-    .card {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    h2 {
-      margin-bottom: 15px;
-    }
-    .root {
-      font-size: 2em;
-      color: #2563eb;
-      margin: 10px 0;
-    }
-    .answer {
-      margin-top: 15px;
-      font-size: 1.1em;
-    }
-    button {
-      margin: 8px;
-      padding: 10px 16px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 1em;
-    }
-    .show-btn {
-      background: #2563eb;
-      color: white;
-    }
-    .next-btn {
-      background: #e5e7eb;
-    }
-    .reset-btn {
-      background: #ef4444;
-      color: white;
-    }
-    .flag-btn {
-      background: #f59e0b;
-      color: white;
-    }
-    .flagged-list {
-      background: #fff;
-      padding: 15px;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    .flagged-list h3 {
-      margin-top: 0;
-    }
-    .flagged-item {
-      margin: 5px 0;
-      font-size: 0.95em;
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Greek & Latin Biology Roots — Flashcards</title>
+<style>
+  :root { --fg:#111; --bg:#fff; --muted:#666; --accent:#111; --border:#ddd; }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; margin:0; color:var(--fg); background:var(--bg); }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 24px; }
+  h1 { font-size: 24px; margin: 0 0 12px; }
+  .controls { display: grid; gap: 12px; }
+  .sections { display:flex; flex-wrap:wrap; gap:6px; }
+  .chip { border:1px solid var(--border); border-radius:10px; padding:4px 8px; font-size:12px; cursor:pointer; user-select:none; }
+  .chip.active { background:var(--accent); color:#fff; }
+  .btn { border:1px solid var(--fg); padding:8px 12px; border-radius:12px; background:#fff; cursor:pointer; }
+  .btn:disabled { opacity:0.4; cursor:not-allowed; }
+  .toolbar { display:flex; flex-wrap: wrap; gap:8px; align-items:center; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .card { position:relative; border:1px solid var(--border); border-radius:16px; padding:24px; min-height:160px; box-shadow: 0 1px 6px rgba(0,0,0,.04); }
+  .root { font-size: 40px; font-weight: 650; margin: 4px 0; }
+  .answer { font-size: 20px; min-height: 28px; }
+  .row { display:flex; gap:8px; align-items:center; }
+  .progress { height: 8px; background:#eee; border-radius:999px; overflow:hidden; }
+  .bar { height:8px; background:#111; width:0%; }
+  .pill { border:1px solid var(--border); border-radius:999px; padding:4px 10px; font-size:12px; }
+  .flagged { background: #ffef99; }
+  .list { display:flex; flex-wrap:wrap; gap:6px; margin-top: 8px; }
+  .kbd { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 12px; border: 1px solid var(--border); padding: 2px 6px; border-radius: 6px; background: #fafafa; }
+  @media (max-width:640px) { .root { font-size: 32px; } }
+</style>
 </head>
 <body>
-  <div class="container">
-    <div class="card">
-      <h2>Root Quiz</h2>
-      <div id="rootWord" class="root"></div>
-      <div id="hint" style="color: gray;">Tap below to see the meaning</div>
-      <div id="answer" class="answer" style="display:none;"></div>
-      <div>
-        <button class="show-btn" onclick="showAnswer()">Show Answer</button>
-        <button class="next-btn" onclick="nextCard()">Next</button>
-        <button class="reset-btn" onclick="resetQuiz()">Reset</button>
-        <button class="flag-btn" onclick="flagRoot()">Flag</button>
-      </div>
+<div class="wrap">
+  <h1>Greek & Latin Biology Roots — Flashcards</h1>
+  <div class="controls">
+    <div class="toolbar">
+      <strong>Study sections:</strong>
+      <div id="sections" class="sections"></div>
     </div>
-    <p>This is only sections 1-7<p>
-    <div class="flagged-list" id="flaggedList" style="display:none;">
-      <h3>Flagged Roots</h3>
-      <ul id="flaggedItems"></ul>
+    <div class="toolbar">
+      <button id="selectAll" class="btn">Select all</button>
+      <button id="clearAll" class="btn">Clear</button>
+      <button id="flaggedOnly" class="btn">Use flagged only</button>
+      <span id="poolCount" class="muted">Pool: 0</span>
     </div>
   </div>
 
-  <script>
-    const roots = [
-      { root: "micro", meaning: "small", examples: ["micron", "microscope"] },
-      { root: "mono", meaning: "one, single", examples: ["monorail", "monosaccharide"] },
-      { root: "multi", meaning: "many", examples: ["multiply", "multitude"] },
-      { root: "anthropo", meaning: "man", examples: ["anthropology", "anthropomorphism"] },
-      { root: "-logy", meaning: "science of, study of", examples: ["biology", "zoology"] },
-      { root: "phono", meaning: "sound", examples: ["phonograph", "microphone"] },
-      { root: "photo", meaning: "light", examples: ["photograph", "photosphere"] },
-      { root: "post", meaning: "after", examples: ["postpone", "posterior"] },
-      { root: "pre", meaning: "before", examples: ["prevent", "prepare"] },
-      { root: "anti", meaning: "against", examples: ["antidote", "antibiotic"] },
-      { root: "pseudo", meaning: "false", examples: ["pseudonym", "pseudopodia"] },
-      { root: "thermo", meaning: "temperature, heat", examples: ["thermal", "thermometer"] },
-      { root: "psycho", meaning: "mind", examples: ["psychology", "psychic"] },
-      { root: "helio", meaning: "sun", examples: ["helium", "heliocentric"] },
-      { root: "macro", meaning: "large", examples: ["macromolecule", "macroscopic"] },
-      { root: "bio", meaning: "life", examples: ["autobiography", "biome"] },
-      { root: "chrono", meaning: "time", examples: ["chronological", "chronograph"] },
-      { root: "circum", meaning: "around", examples: ["circumference", "circumnavigate"] },
-      { root: "auto", meaning: "self", examples: ["autosome", "automobile"] },
-      { root: "aqua", meaning: "water", examples: ["aquatic", "aquarium"] },
-      { root: "poly", meaning: "many", examples: ["polyploidy", "polygon"] },
-      { root: "zyg-", meaning: "pair", examples: ["zygote", "zygospore"] },
-      { root: "neuro", meaning: "nerve", examples: ["neuron", "neurosurgeon"] },
-      { root: "corpus", meaning: "body", examples: ["corpse", "corpuscle"] },
-      { root: "derm", meaning: "skin", examples: ["epidermis", "dermatologist"] },
-      { root: "hemi", meaning: "half", examples: ["hemisphere", "Hemiptera"] },
-      { root: "avi", meaning: "bird", examples: ["aviation", "aviary"] },
-      { root: "chlor", meaning: "green", examples: ["chlorophyll", "chlorine"] },
-      { root: "ophthalmo", meaning: "eye", examples: ["ophthalmologist", "ophthalmic"] },
-      { root: "sub", meaning: "below, under", examples: ["submarine", "subcutaneous"] },
-      { root: "entomo", meaning: "insect", examples: ["entomology", "entomopathogen"] },
-      { root: "contra", meaning: "against", examples: ["contrast", "contradict"] },
-      { root: "cardi", meaning: "heart", examples: ["cardiac", "cardiovascular"] },
-      { root: "magni", meaning: "great, large", examples: ["magnify", "magnificent"] },
-      { root: "hypo", meaning: "below, under", examples: ["hypodermic", "hypoglycemia"] }
-    ];
+  <div style="margin-top:16px;">
+    <div class="muted row" style="justify-content: space-between; margin-bottom:6px;">
+      <div id="meta">Section – • #–</div>
+      <div id="counter"></div>
+    </div>
+    <div class="card">
+      <div id="root" class="root">—</div>
+      <div id="answer" class="answer muted">(answer hidden)</div>
+      <div class="toolbar" style="margin-top:16px;">
+        <button id="showBtn" class="btn">Show answer</button>
+        <button id="shuffleBtn" class="btn">Shuffle</button>
+        <button id="prevBtn" class="btn">Prev</button>
+        <button id="nextBtn" class="btn">Next</button>
+        <button id="flagBtn" class="btn">☆ Flag</button>
+      </div>
+    </div>
+    <div style="margin-top:12px;">
+      <div class="row" style="justify-content: space-between;">
+        <span class="muted">Progress</span>
+        <span id="pct" class="muted">0%</span>
+      </div>
+      <div class="progress"><div id="bar" class="bar"></div></div>
+    </div>
+  </div>
 
-    let index = 0;
-    let flagged = [];
+  <div style="margin-top:16px; border:1px solid var(--border); border-radius:12px; padding:12px;">
+    <div class="row" style="justify-content: space-between; margin-bottom:6px;">
+      <div><strong>Flagged words</strong> <span id="flagCount" class="muted">(0)</span></div>
+      <button id="clearFlags" class="btn">Clear flags</button>
+    </div>
+    <div id="flagList" class="list muted">Use ☆ Flag to save tough ones.</div>
+  </div>
 
-    function showCard() {
-      document.getElementById("rootWord").textContent = roots[index].root;
-      document.getElementById("answer").style.display = "none";
-      document.getElementById("hint").style.display = "block";
-    }
+  <p class="muted" style="margin-top:10px;">
+    Shortcuts: <span class="kbd">Space</span> show/hide • <span class="kbd">F</span> flag • <span class="kbd">S</span> shuffle •
+    <span class="kbd">←</span>/<span class="kbd">→</span> prev/next
+  </p>
+</div>
 
-    function showAnswer() {
-      const ansDiv = document.getElementById("answer");
-      ansDiv.innerHTML = `<strong>Meaning:</strong> ${roots[index].meaning}<br>
-        <strong>Examples:</strong> ${roots[index].examples.join(", ")}`;
-      ansDiv.style.display = "block";
-      document.getElementById("hint").style.display = "none";
-    }
+<script>
+// ==== DATA (150 entries) =====================================================
+const ROOTS = [
+  { id:1, section:1, root:"micro-", meaning:"small" },
+  { id:2, section:1, root:"mono-", meaning:"one, single" },
+  { id:3, section:1, root:"multi-", meaning:"many" },
+  { id:4, section:1, root:"anthropo-", meaning:"man" },
+  { id:5, section:1, root:"-logy", meaning:"science of, study of" },
+  { id:6, section:2, root:"phono-", meaning:"sound" },
+  { id:7, section:2, root:"photo-", meaning:"light" },
+  { id:8, section:2, root:"post-", meaning:"after" },
+  { id:9, section:2, root:"pre-", meaning:"before" },
+  { id:10, section:2, root:"anti-", meaning:"against" },
+  { id:11, section:3, root:"pseudo-", meaning:"false" },
+  { id:12, section:3, root:"thermo-", meaning:"temperature, heat" },
+  { id:13, section:3, root:"psycho-", meaning:"mind" },
+  { id:14, section:3, root:"helio-", meaning:"sun" },
+  { id:15, section:3, root:"macro-", meaning:"large" },
+  { id:16, section:4, root:"bio-", meaning:"life" },
+  { id:17, section:4, root:"chrono-", meaning:"time" },
+  { id:18, section:4, root:"circum-", meaning:"around" },
+  { id:19, section:4, root:"auto-", meaning:"self" },
+  { id:20, section:4, root:"aqua-", meaning:"water" },
+  { id:21, section:5, root:"poly-", meaning:"many" },
+  { id:22, section:5, root:"zyg-", meaning:"pair" },
+  { id:23, section:5, root:"neuro-", meaning:"nerve" },
+  { id:24, section:5, root:"corpus-", meaning:"body" },
+  { id:25, section:5, root:"derm-", meaning:"skin" },
+  { id:26, section:6, root:"hemi-", meaning:"half" },
+  { id:27, section:6, root:"avi-", meaning:"bird" },
+  { id:28, section:6, root:"chlor-", meaning:"green" },
+  { id:29, section:6, root:"ophthalmo-", meaning:"eye" },
+  { id:30, section:6, root:"sub-", meaning:"below, under" },
+  { id:31, section:7, root:"entomo-", meaning:"insect" },
+  { id:32, section:7, root:"contra-", meaning:"against" },
+  { id:33, section:7, root:"cardi-", meaning:"heart" },
+  { id:34, section:7, root:"magni-", meaning:"great, large" },
+  { id:35, section:7, root:"hypo-", meaning:"below, under" },
+  { id:36, section:8, root:"zoo-", meaning:"animal" },
+  { id:37, section:8, root:"sect-", meaning:"cut" },
+  { id:38, section:8, root:"sphere-", meaning:"round, globe" },
+  { id:39, section:8, root:"ornitho-", meaning:"bird" },
+  { id:40, section:8, root:"phyll-", meaning:"leaf" },
+  { id:41, section:9, root:"octo-", meaning:"eight" },
+  { id:42, section:9, root:"bene-", meaning:"good" },
+  { id:43, section:9, root:"inter-", meaning:"between" },
+  { id:44, section:9, root:"epi-", meaning:"upon" },
+  { id:45, section:9, root:"hetero-", meaning:"mixed" },
+  { id:46, section:10, root:"entero-", meaning:"intestine" },
+  { id:47, section:10, root:"-ectomy", meaning:"cut out" },
+  { id:48, section:10, root:"denti-, -dont", meaning:"tooth, teeth" },
+  { id:49, section:10, root:"-phil(e)", meaning:"loving" },
+  { id:50, section:10, root:"-onym", meaning:"name" },
+  { id:51, section:11, root:"neo-", meaning:"new" },
+  { id:52, section:11, root:"arthro-", meaning:"joint" },
+  { id:53, section:11, root:"gastro-", meaning:"stomach" },
+  { id:54, section:11, root:"sol-", meaning:"alone" },
+  { id:55, section:11, root:"dys-", meaning:"faulty, bad" },
+  { id:56, section:12, root:"dis-", meaning:"bad, evil" },
+  { id:57, section:12, root:"chrom-", meaning:"color" },
+  { id:58, section:12, root:"luna-", meaning:"moon" },
+  { id:59, section:12, root:"exo-", meaning:"outside" },
+  { id:60, section:12, root:"som(e)-", meaning:"body" },
+  { id:61, section:13, root:"super-", meaning:"over, above" },
+  { id:62, section:13, root:"intro-", meaning:"within" },
+  { id:63, section:13, root:"de-", meaning:"down, away" },
+  { id:64, section:13, root:"ex-", meaning:"out of, from" },
+  { id:65, section:13, root:"nephro-", meaning:"kidney" },
+  { id:66, section:14, root:"per-", meaning:"through" },
+  { id:67, section:14, root:"audi-", meaning:"hear" },
+  { id:68, section:14, root:"-itis", meaning:"inflammation" },
+  { id:69, section:14, root:"-osis", meaning:"abnormal" },
+  { id:70, section:14, root:"natal-", meaning:"birth" },
+  { id:71, section:15, root:"frater-", meaning:"brother" },
+  { id:72, section:15, root:"scribo-", meaning:"write" },
+  { id:73, section:15, root:"gen-", meaning:"race, kind" },
+  { id:74, section:15, root:"pedi-, -pod-", meaning:"foot" },
+  { id:75, section:15, root:"com-", meaning:"with" },
+  { id:76, section:16, root:"arbor-", meaning:"tree" },
+  { id:77, section:16, root:"arch-", meaning:"ancient, primitive" },
+  { id:78, section:16, root:"volvo-", meaning:"roll, turn" },
+  { id:79, section:16, root:"phyte-", meaning:"plant, growth" },
+  { id:80, section:16, root:"proto-", meaning:"first, original" },
+  { id:81, section:17, root:"patho-", meaning:"disease" },
+  { id:82, section:17, root:"geo-", meaning:"earth" },
+  { id:83, section:17, root:"hemat-", meaning:"blood" },
+  { id:84, section:17, root:"hexa-", meaning:"six" },
+  { id:85, section:17, root:"ambi-", meaning:"both" },
+  { id:86, section:18, root:"retro-", meaning:"back" },
+  { id:87, section:18, root:"morph-", meaning:"form" },
+  { id:88, section:18, root:"osteo-", meaning:"bone" },
+  { id:89, section:18, root:"flagell-", meaning:"whip" },
+  { id:90, section:18, root:"vita-", meaning:"life" },
+  { id:91, section:19, root:"scope-", meaning:"view" },
+  { id:92, section:19, root:"vaso-", meaning:"vessel" },
+  { id:93, section:19, root:"strat-", meaning:"layer" },
+  { id:94, section:19, root:"intra-", meaning:"within" },
+  { id:95, section:19, root:"hyper-", meaning:"high" },
+  { id:96, section:20, root:"vac-", meaning:"empty" },
+  { id:97, section:20, root:"eu-", meaning:"good, true" },
+  { id:98, section:20, root:"pneumo-", meaning:"lung" },
+  { id:99, section:20, root:"alg-", meaning:"pain" },
+  { id:100, section:20, root:"cata-", meaning:"against, down" },
+  { id:101, section:21, root:"bol-", meaning:"throw" },
+  { id:102, section:21, root:"stom-", meaning:"opening, mouth" },
+  { id:103, section:21, root:"oto-", meaning:"ear" },
+  { id:104, section:21, root:"rhino-", meaning:"nose" },
+  { id:105, section:21, root:"cutis-", meaning:"skin" },
+  { id:106, section:22, root:"leuco-", meaning:"white" },
+  { id:107, section:22, root:"herb-", meaning:"plant" },
+  { id:108, section:22, root:"bi-", meaning:"two" },
+  { id:109, section:22, root:"andro-", meaning:"male" },
+  { id:110, section:22, root:"carni-", meaning:"flesh, meat" },
+  { id:111, section:23, root:"ped-", meaning:"child" },
+  { id:112, section:23, root:"litho-", meaning:"rock, write" },
+  { id:113, section:23, root:"ambul-", meaning:"walk" },
+  { id:114, section:23, root:"vor-", meaning:"eater" },
+  { id:115, section:23, root:"somn-", meaning:"sleep" },
+  { id:116, section:24, root:"ichthy-", meaning:"fish" },
+  { id:117, section:24, root:"cephalo-", meaning:"head" },
+  { id:118, section:24, root:"lumin-", meaning:"light" },
+  { id:119, section:24, root:"homo-", meaning:"same" },
+  { id:120, section:24, root:"mal-", meaning:"bad" },
+  { id:121, section:25, root:"manus-", meaning:"hand" },
+  { id:122, section:25, root:"plan-", meaning:"flat" },
+  { id:123, section:25, root:"omni-", meaning:"all" },
+  { id:124, section:25, root:"anim-", meaning:"life, spirit" },
+  { id:125, section:25, root:"morb-", meaning:"disease" },
+  { id:126, section:26, root:"noct-", meaning:"night" },
+  { id:127, section:26, root:"kine-", meaning:"move" },
+  { id:128, section:26, root:"halo-", meaning:"salt" },
+  { id:129, section:26, root:"dem-", meaning:"people" },
+  { id:130, section:26, root:"gam-", meaning:"union, marriage" },
+  { id:131, section:27, root:"gyn-", meaning:"female" },
+  { id:132, section:27, root:"blast-", meaning:"cell, primitive" },
+  { id:133, section:27, root:"lacto-", meaning:"milk" },
+  { id:134, section:27, root:"tropi-", meaning:"turn" },
+  { id:135, section:27, root:"meta-", meaning:"after, change" },
+  { id:136, section:28, root:"dactyl-", meaning:"finger, toe" },
+  { id:137, section:28, root:"tox-", meaning:"poison" },
+  { id:138, section:28, root:"meso-", meaning:"middle" },
+  { id:139, section:28, root:"trans-", meaning:"across, through" },
+  { id:140, section:28, root:"hepat-", meaning:"liver" },
+  { id:141, section:29, root:"cyte-", meaning:"cell" },
+  { id:142, section:29, root:"-ode", meaning:"having the shape of" },
+  { id:143, section:29, root:"-cide", meaning:"killing" },
+  { id:144, section:29, root:"gymno-", meaning:"naked, uncovered" },
+  { id:145, section:29, root:"melan-", meaning:"black, dark" },
+  { id:146, section:30, root:"penta-", meaning:"five" },
+  { id:147, section:30, root:"xantho-", meaning:"yellow" },
+  { id:148, section:30, root:"onc-", meaning:"tumor, swelling" },
+  { id:149, section:30, root:"-lysis", meaning:"break up" },
+  { id:150, section:30, root:"cyan-", meaning:"blue" },
+];
 
-    function nextCard() {
-      index = (index + 1) % roots.length;
-      showCard();
-    }
+// ==== STATE ================================================================
+const SECTIONS = Array.from({length:30}, (_,i)=>i+1);
+const store = {
+  get sel(){ try{return JSON.parse(localStorage.getItem('bio_roots_sections')||'null')||SECTIONS;}catch{return SECTIONS;}},
+  set sel(arr){ localStorage.setItem('bio_roots_sections', JSON.stringify(arr)); },
+  get flags(){ try{return JSON.parse(localStorage.getItem('bio_roots_flags')||'[]');}catch{return [];} },
+  set flags(arr){ localStorage.setItem('bio_roots_flags', JSON.stringify(arr)); },
+};
 
-    function resetQuiz() {
+let selectedSections = Array.isArray(store.sel) ? store.sel : SECTIONS.slice();
+let flagged = Array.isArray(store.flags) ? store.flags : [];
+let flaggedOnly = false;
+
+let deck = [];
+let index = 0;
+let show = false;
+let seed = 1;
+
+// ==== DOM refs =============================================================
+const elSections = document.getElementById('sections');
+const elPoolCount = document.getElementById('poolCount');
+const elRoot = document.getElementById('root');
+const elAns = document.getElementById('answer');
+const elMeta = document.getElementById('meta');
+const elCounter = document.getElementById('counter');
+const elPct = document.getElementById('pct');
+const elBar = document.getElementById('bar');
+const elFlagBtn = document.getElementById('flagBtn');
+const elFlagList = document.getElementById('flagList');
+const elFlagCount = document.getElementById('flagCount');
+
+// ==== Helpers ==============================================================
+function rebuildDeck() {
+  const base = ROOTS.filter(r => selectedSections.includes(r.section));
+  deck = flaggedOnly ? base.filter(r => flagged.includes(r.id)) : base.slice();
+  // Fisher–Yates shuffle using seed-ish perturbation (also for Shuffle button)
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  index = Math.min(index, Math.max(deck.length-1, 0));
+  updatePool();
+  render();
+}
+
+function updatePool() {
+  elPoolCount.textContent = `Pool: ${deck.length} cards`;
+}
+
+function render() {
+  if (deck.length === 0) {
+    elRoot.textContent = '—';
+    elAns.textContent = '(choose at least one section)';
+    elAns.classList.add('muted');
+    elMeta.textContent = 'Section – • #–';
+    elCounter.textContent = '0 / 0';
+    elPct.textContent = '0%';
+    elBar.style.width = '0%';
+    elFlagBtn.disabled = true;
+    return;
+  }
+  const c = deck[index];
+  elMeta.textContent = `Section ${c.section} • #${c.id}`;
+  elRoot.textContent = c.root;
+  elAns.textContent = show ? c.meaning : '(answer hidden)';
+  elAns.classList.toggle('muted', !show);
+  elCounter.textContent = `${index+1} / ${deck.length}`;
+  const pct = Math.round(((index+1)/deck.length)*100);
+  elPct.textContent = pct + '%';
+  elBar.style.width = pct + '%';
+  elFlagBtn.disabled = false;
+  elFlagBtn.textContent = flagged.includes(c.id) ? '★ Flagged' : '☆ Flag';
+  elFlagBtn.classList.toggle('flagged', flagged.includes(c.id));
+  // flagged list
+  if (flagged.length === 0) {
+    elFlagList.textContent = 'Use ☆ Flag to save tough ones.';
+    elFlagList.classList.add('muted');
+  } else {
+    elFlagList.innerHTML = '';
+    elFlagList.classList.remove('muted');
+    flagged.forEach(id => {
+      const r = ROOTS.find(x => x.id === id);
+      if (!r) return;
+      const span = document.createElement('span');
+      span.className = 'pill';
+      span.textContent = `#${r.id} ${r.root} — ${r.meaning}`;
+      elFlagList.appendChild(span);
+    });
+  }
+  elFlagCount.textContent = `(${flagged.length})`;
+}
+
+function jumpRandom() {
+  if (deck.length) {
+    index = Math.floor(Math.random() * deck.length);
+    show = false;
+    render();
+  }
+}
+
+// ==== Build section chips ==================================================
+function drawSectionChips() {
+  elSections.innerHTML = '';
+  SECTIONS.forEach(s => {
+    const chip = document.createElement('span');
+    chip.className = 'chip' + (selectedSections.includes(s) ? ' active' : '');
+    chip.textContent = s;
+    chip.addEventListener('click', () => {
+      const pos = selectedSections.indexOf(s);
+      if (pos >= 0) selectedSections.splice(pos,1);
+      else selectedSections.push(s);
+      store.sel = selectedSections.slice().sort((a,b)=>a-b);
+      drawSectionChips();
       index = 0;
-      flagged = [];
-      document.getElementById("flaggedList").style.display = "none";
-      document.getElementById("flaggedItems").innerHTML = "";
-      showCard();
-    }
+      show = false;
+      rebuildDeck();
+    });
+    elSections.appendChild(chip);
+  });
+}
 
-    function flagRoot() {
-      const current = roots[index];
-      if (!flagged.includes(current.root)) {
-        flagged.push(current.root);
-        updateFlaggedList();
-      }
-    }
+document.getElementById('selectAll').onclick = () => {
+  selectedSections = SECTIONS.slice();
+  store.sel = selectedSections;
+  drawSectionChips();
+  index = 0; show = false;
+  rebuildDeck();
+};
+document.getElementById('clearAll').onclick = () => {
+  selectedSections = [];
+  store.sel = selectedSections;
+  drawSectionChips();
+  index = 0; show = false;
+  rebuildDeck();
+};
+document.getElementById('flaggedOnly').onclick = (e) => {
+  flaggedOnly = !flaggedOnly;
+  e.currentTarget.textContent = flaggedOnly ? 'Using flagged only' : 'Use flagged only';
+  index = 0; show = false;
+  rebuildDeck();
+};
 
-    function updateFlaggedList() {
-      const listDiv = document.getElementById("flaggedList");
-      const ul = document.getElementById("flaggedItems");
-      ul.innerHTML = "";
-      flagged.forEach(root => {
-        const li = document.createElement("li");
-        li.textContent = root;
-        li.className = "flagged-item";
-        ul.appendChild(li);
-      });
-      listDiv.style.display = "block";
-    }
+document.getElementById('showBtn').onclick = () => { show = !show; render(); };
+document.getElementById('prevBtn').onclick = () => { if (!deck.length) return; index = (index-1+deck.length)%deck.length; show=false; render(); };
+document.getElementById('nextBtn').onclick = () => { if (!deck.length) return; index = (index+1)%deck.length; show=false; render(); };
+document.getElementById('shuffleBtn').onclick = () => { seed++; rebuildDeck(); jumpRandom(); };
 
-    // init
-    showCard();
-  </script>
+elFlagBtn.onclick = () => {
+  if (!deck.length) return;
+  const id = deck[index].id;
+  const i = flagged.indexOf(id);
+  if (i>=0) flagged.splice(i,1); else flagged.push(id);
+  store.flags = flagged.slice();
+  render();
+};
+document.getElementById('clearFlags').onclick = () => { flagged = []; store.flags = flagged; render(); };
+
+// Keyboard shortcuts
+window.addEventListener('keydown', (e) => {
+  if (e.key === ' ') { e.preventDefault(); document.getElementById('showBtn').click(); }
+  if (e.key === 'ArrowRight') document.getElementById('nextBtn').click();
+  if (e.key === 'ArrowLeft') document.getElementById('prevBtn').click();
+  if (e.key.toLowerCase() === 'f') elFlagBtn.click();
+  if (e.key.toLowerCase() === 's') document.getElementById('shuffleBtn').click();
+});
+
+// Init
+drawSectionChips();
+rebuildDeck();
+render();
+</script>
 </body>
 </html>
