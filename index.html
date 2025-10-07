@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -45,6 +43,7 @@
       <button id="selectAll" class="btn">Select all</button>
       <button id="clearAll" class="btn">Clear</button>
       <button id="flaggedOnly" class="btn">Use flagged only</button>
+      <button id="reverseMode" class="btn">Normal order</button>
       <span id="poolCount" class="muted">Pool: 0</span>
     </div>
   </div>
@@ -79,7 +78,7 @@
       <div><strong>Flagged words</strong> <span id="flagCount" class="muted">(0)</span></div>
       <button id="clearFlags" class="btn">Clear flags</button>
     </div>
-    <div id="flagList" class="list muted">Flagged rootwords will show up here.</div>
+    <div id="flagList" class="list muted">Use ☆ Flag to save tough ones.</div>
   </div>
 
   <p class="muted" style="margin-top:10px;">
@@ -250,16 +249,18 @@ const store = {
   set sel(arr){ localStorage.setItem('bio_roots_sections', JSON.stringify(arr)); },
   get flags(){ try{return JSON.parse(localStorage.getItem('bio_roots_flags')||'[]');}catch{return [];} },
   set flags(arr){ localStorage.setItem('bio_roots_flags', JSON.stringify(arr)); },
+  get reverse(){ try{return JSON.parse(localStorage.getItem('bio_roots_reverse')||'false');}catch{return false;} },
+  set reverse(val){ localStorage.setItem('bio_roots_reverse', JSON.stringify(val)); },
 };
 
 let selectedSections = Array.isArray(store.sel) ? store.sel : SECTIONS.slice();
 let flagged = Array.isArray(store.flags) ? store.flags : [];
 let flaggedOnly = false;
+let reverse = store.reverse || false;
 
 let deck = [];
 let index = 0;
 let show = false;
-let seed = 1;
 
 // ==== DOM refs =============================================================
 const elSections = document.getElementById('sections');
@@ -273,12 +274,12 @@ const elBar = document.getElementById('bar');
 const elFlagBtn = document.getElementById('flagBtn');
 const elFlagList = document.getElementById('flagList');
 const elFlagCount = document.getElementById('flagCount');
+const elReverse = document.getElementById('reverseMode');
 
-// ==== Helpers ==============================================================
+// ==== Functions =============================================================
 function rebuildDeck() {
   const base = ROOTS.filter(r => selectedSections.includes(r.section));
   deck = flaggedOnly ? base.filter(r => flagged.includes(r.id)) : base.slice();
-  // Fisher–Yates shuffle using seed-ish perturbation (also for Shuffle button)
   for (let i = deck.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [deck[i], deck[j]] = [deck[j], deck[i]];
@@ -306,9 +307,18 @@ function render() {
   }
   const c = deck[index];
   elMeta.textContent = `Section ${c.section} • #${c.id}`;
-  elRoot.textContent = c.root;
-  elAns.textContent = show ? c.meaning : '(answer hidden)';
-  elAns.classList.toggle('muted', !show);
+
+  if (reverse) {
+    elRoot.textContent = show ? c.root : '(answer hidden)';
+    elAns.textContent = c.meaning;
+    elAns.classList.remove('muted');
+    elRoot.classList.toggle('muted', !show);
+  } else {
+    elRoot.textContent = c.root;
+    elAns.textContent = show ? c.meaning : '(answer hidden)';
+    elAns.classList.toggle('muted', !show);
+  }
+
   elCounter.textContent = `${index+1} / ${deck.length}`;
   const pct = Math.round(((index+1)/deck.length)*100);
   elPct.textContent = pct + '%';
@@ -316,7 +326,7 @@ function render() {
   elFlagBtn.disabled = false;
   elFlagBtn.textContent = flagged.includes(c.id) ? '★ Flagged' : '☆ Flag';
   elFlagBtn.classList.toggle('flagged', flagged.includes(c.id));
-  // flagged list
+
   if (flagged.length === 0) {
     elFlagList.textContent = 'Use ☆ Flag to save tough ones.';
     elFlagList.classList.add('muted');
@@ -333,17 +343,9 @@ function render() {
     });
   }
   elFlagCount.textContent = `(${flagged.length})`;
+  elReverse.textContent = reverse ? 'Reverse (def → root)' : 'Normal order';
 }
 
-function jumpRandom() {
-  if (deck.length) {
-    index = Math.floor(Math.random() * deck.length);
-    show = false;
-    render();
-  }
-}
-
-// ==== Build section chips ==================================================
 function drawSectionChips() {
   elSections.innerHTML = '';
   SECTIONS.forEach(s => {
@@ -356,14 +358,14 @@ function drawSectionChips() {
       else selectedSections.push(s);
       store.sel = selectedSections.slice().sort((a,b)=>a-b);
       drawSectionChips();
-      index = 0;
-      show = false;
+      index = 0; show = false;
       rebuildDeck();
     });
     elSections.appendChild(chip);
   });
 }
 
+// ==== Buttons ===============================================================
 document.getElementById('selectAll').onclick = () => {
   selectedSections = SECTIONS.slice();
   store.sel = selectedSections;
@@ -385,10 +387,17 @@ document.getElementById('flaggedOnly').onclick = (e) => {
   rebuildDeck();
 };
 
+elReverse.onclick = () => {
+  reverse = !reverse;
+  store.reverse = reverse;
+  show = false;
+  render();
+};
+
 document.getElementById('showBtn').onclick = () => { show = !show; render(); };
 document.getElementById('prevBtn').onclick = () => { if (!deck.length) return; index = (index-1+deck.length)%deck.length; show=false; render(); };
 document.getElementById('nextBtn').onclick = () => { if (!deck.length) return; index = (index+1)%deck.length; show=false; render(); };
-document.getElementById('shuffleBtn').onclick = () => { seed++; rebuildDeck(); jumpRandom(); };
+document.getElementById('shuffleBtn').onclick = () => { rebuildDeck(); index = Math.floor(Math.random()*deck.length); show=false; render(); };
 
 elFlagBtn.onclick = () => {
   if (!deck.length) return;
@@ -400,19 +409,21 @@ elFlagBtn.onclick = () => {
 };
 document.getElementById('clearFlags').onclick = () => { flagged = []; store.flags = flagged; render(); };
 
-// Keyboard shortcuts
+// ==== Keyboard shortcuts ===================================================
 window.addEventListener('keydown', (e) => {
   if (e.key === ' ') { e.preventDefault(); document.getElementById('showBtn').click(); }
   if (e.key === 'ArrowRight') document.getElementById('nextBtn').click();
   if (e.key === 'ArrowLeft') document.getElementById('prevBtn').click();
   if (e.key.toLowerCase() === 'f') elFlagBtn.click();
   if (e.key.toLowerCase() === 's') document.getElementById('shuffleBtn').click();
+  if (e.key.toLowerCase() === 'r') elReverse.click();
 });
 
-// Init
+// ==== Init =================================================================
 drawSectionChips();
 rebuildDeck();
 render();
 </script>
 </body>
 </html>
+
